@@ -1,0 +1,7 @@
+node_modules
+tags
+.env
+.idea
+package-lock.json
+store.json
+allMessages.json
