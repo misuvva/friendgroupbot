@@ -9,7 +9,7 @@ const { MessageActionRow } = require('discord.js');
 const { DateTime } = require('luxon');
 const { createCommand } = require('../../commands');
 const { pick } = require('../dmHandler/utils');
-const creds = require('../../serverbot-348821-a7dd28246089.json');
+const creds = require('../../serverbot-google-credentials.json');
 const { createButton } = require('../reminderHandler/reminderHandler');
 
 const setupFlashCardCommands = (guild) => {
