@@ -1,7 +1,9 @@
 const express = require('express');
 const { request } = require('undici');
 
-const { CLIENT_ID, CLIENT_SECRET, PORT } = process.env;
+const {
+  CLIENT_ID, CLIENT_SECRET, PORT, SERVER_ADDRESS
+} = process.env;
 
 const Oauth2Server = () => {
 
@@ -19,7 +21,7 @@ const Oauth2Server = () => {
             client_secret: CLIENT_SECRET,
             code,
             grant_type: 'authorization_code',
-            redirect_uri: `http://localhost:${PORT}`,
+            redirect_uri: `${SERVER_ADDRESS}:${PORT}`,
             scope: 'identify',
           }).toString(),
           headers: {
