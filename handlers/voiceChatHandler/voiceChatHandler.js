@@ -1,23 +1,25 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-promise-executor-return */
-const audioCategoryId = '832327947318591491';
-const { join } = require('node:path');
 const _ = require('lodash');
 
 const { get } = _;
-const { joinVoiceChannel, createAudioResource, createAudioPlayer } = require('@discordjs/voice');
-const { createCommand } = require('../../commands');
-const { pick, voiceChannelNames } = require('../../utils/utils');
+const { pick } = require('../../utils/utils');
 const { errorHandler } = require('../errorHandler/errorHandler');
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const getVoiceChannelNames = async (guild) => {
+  const dataChannel = guild.channels.cache.find((channel) => get(channel, 'name').includes('data'));
+  const voiceChannelNamesMessage = dataChannel.messages.cache.find((message) => message.content.includes('names for voice channels'));
+  const result = voiceChannelNamesMessage.content.split('[')[1].split(']')[0].split(',');
+  return result;
+};
 
-const updateVoiceChats = (oldState, newState, guild) => {
+const updateVoiceChats = async (oldState, newState, guild) => {
   try {
     const emptyChannels = [];
-    const idealNumberOfEmptyChannels = 2;
-
+    const idealNumberOfEmptyChannels = 1;
+    const audioCategoryId = guild.channels.cache.find((channel) => get(channel, 'type') === 'GUILD_VOICE').parent.id;
+    const voiceChannelNames = await getVoiceChannelNames(guild);
     const voiceChannels = [...newState.guild.channels.cache
       .filter((channel) => get(channel, 'type') === 'GUILD_VOICE')
       .values()]
@@ -51,7 +53,6 @@ const updateVoiceChats = (oldState, newState, guild) => {
           type: 'GUILD_VOICE',
           parent: audioCategoryId,
           userLimit: 99,
-          bitrate: 128000
         };
 
         guild.channels.create(newChannelName, newChannelOptions);
@@ -62,40 +63,6 @@ const updateVoiceChats = (oldState, newState, guild) => {
   }
 };
 
-const setupVoiceChannelCommands = async (guild) => {
-  await createCommand(guild, {
-    name: 'test-voice',
-    description: 'Test command for various voice channel functions',
-    execute: async (interaction) => {
-      const voiceChannel = guild.channels.cache.find((channel) => channel.type === 'GUILD_VOICE');
-      const voiceConnection = await joinVoiceChannel({
-        guildId: guild.id,
-        channelId: voiceChannel.id,
-        adapterCreator: guild.voiceAdapterCreator,
-        selfDeaf: false,
-        selfMute: false
-      });
-      const sounds = [];
-      for (let i = 0; i < 9; i++) {
-        const path = join(__dirname, `./SFX/sound-${i}.mp3`);
-        const audioResource = createAudioResource(path);
-        sounds.push(audioResource);
-      }
-      const soundsToPlay = _.shuffle(sounds);
-      const audioPlayer = await createAudioPlayer();
-      await voiceConnection.subscribe(audioPlayer);
-      for (let soundIndex = 0; soundIndex < soundsToPlay.length; soundIndex++) {
-        const sound = soundsToPlay[soundIndex];
-        audioPlayer.play(sound);
-        await sleep(300);
-      }
-      voiceConnection.disconnect();
-      interaction.reply({ content: 'test voice command executed', ephemeral: true });
-    }
-  });
-};
-
 module.exports = {
   updateVoiceChats,
-  setupVoiceChannelCommands
 };

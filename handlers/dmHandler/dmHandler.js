@@ -31,8 +31,6 @@ const dmHandler = async (message, guild) => {
   try {
     const bigGeneral = guild.channels.cache.find((channel) => channel.name.includes('big-general'));
 
-    // Names in the server are formatted with 2 chars of padding on each side
-    // TODO: this doesn't work with compound names like basil/ella and darwin/percy
     const getName = (member) => member.nickname.slice(2, -2)
       .toLowerCase()
       .split(' ')
