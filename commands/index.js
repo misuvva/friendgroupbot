@@ -1,5 +1,19 @@
 /* eslint-disable quotes */
 const { generateRelationship } = require('../generators/relationshipGenerator');
+const { pick } = require('../utils/utils');
+
+const pickColor = () => pick([
+  '#de2316',
+  '#f09841',
+  '#e0d316',
+  '#ace334',
+  '#5ab013',
+  '#187818',
+  '#329955',
+  '#5ed6b2',
+  '#5ecad6',
+  '#309bf2',
+]);
 
 const commands = {};
 
@@ -42,7 +56,8 @@ const setupCommands = async (guild) => {
         );
       }
       const emoji = interaction.options.getString('emoji');
-      const name = interaction.options.getString('name');
+      const channelName = interaction.options.getString('channelname');
+      const roleName = interaction.options.getString('rolename');
       const catalogMessages = await catalogChannel.messages.fetch();
       let catalogMessage = catalogMessages.find((message) => message.author.bot && message.content.includes('catalog'));
       if (!catalogMessage) {
@@ -58,13 +73,26 @@ const setupCommands = async (guild) => {
         interaction.reply({ content: 'It didnt work. The emoji has to be something I can react to a message with', ephemeral: true });
       }
 
-      // create role, create channel
+      const gameRole = await guild.roles.create({ name: roleName, color: pickColor() });
+      const gameChannel = await guild.channels.create(`${emoji}${channelName}${emoji}`, { parent: gamesCategory });
 
-      return console.log(interaction.options, 'DEVLOG'); // RMBL
+      await catalogMessage.edit(
+        `${catalogMessage.content}`
+        + `\n ${emoji} ${gameChannel} ${gameRole}`
+      );
+
+      interaction.reply({ content: 'Done!', ephemeral: true });
+
     },
     options: [
       {
-        name: 'roleName',
+        name: 'rolename',
+        description: 'The name of the role for the game',
+        type: 3,
+        required: true
+      },
+      {
+        name: 'channelname',
         description: 'The name of the channel for the game',
         type: 3,
         required: true

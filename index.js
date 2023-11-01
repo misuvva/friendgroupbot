@@ -16,14 +16,12 @@ const discordModals = require('discord-modals');
 const {
   createButton
 } = require('./handlers/reminderHandler/reminderHandler');
-const { youtubeEmbedHandler } = require('./handlers/youtubeEmbedHandler');
 const { dmHandler } = require('./handlers/dmHandler/dmHandler');
 const { editableMessageHandlers } = require('./handlers/editableMessageHandler/editableMessageHandler');
-const { statusHandler, setupStatusCommands } = require('./handlers/statusHandler/statusHandler');
+const { setupStatusCommands } = require('./handlers/statusHandler/statusHandler');
 const { errorHandler } = require('./handlers/errorHandler/errorHandler');
 const { updateVoiceChats } = require('./handlers/voiceChatHandler/voiceChatHandler');
 const { pick } = require('./utils/utils');
-const { voteHandler } = require('./handlers/voteHandler/voteHandler');
 const { setupCommands, commandsHandler } = require('./commands');
 const { Oauth2Server } = require('./server');
 
@@ -125,6 +123,45 @@ client.once('ready', async () => {
         editableMessageHandlers.openModal({ interaction, client });
       }
       commandsHandler(interaction);
+    });
+
+    const isCatalogMessage = async (message) => (
+      message.content.includes('catalog')
+        && message.author.id === client.user.id
+        && message.channel.name.includes('catalog')
+    );
+
+    const getRoleFromCatalog = (messageReaction, message) => {
+      const games = message.content.split('\n').slice(1);
+      const game = games.find(game => game.includes(messageReaction.emoji));
+      const roleMention = game.split(' ')[3];
+      const roleId = roleMention.slice(3, -1);
+      const role = message.guild.roles.cache.find((role) => role.id === roleId);
+      return role;
+    };
+
+    client.on('messageReactionAdd', async (messageReaction, user) => {
+      const { channel } = messageReaction.message;
+      const message = (await channel.messages.fetch(messageReaction.message)).first();
+      if (await isCatalogMessage(message)) {
+        if (message.content.includes(messageReaction.emoji)) {
+          const role = await getRoleFromCatalog(messageReaction, message);
+          const member = message.guild.members.cache.find(member => member.user.id === user.id);
+          await member.roles.add(role);
+        }
+      }
+    });
+
+    client.on('messageReactionRemove', async (messageReaction, user) => {
+      const { channel } = messageReaction.message;
+      const message = (await channel.messages.fetch(messageReaction.message)).first();
+      if (await isCatalogMessage(message)) {
+        if (message.content.includes(messageReaction.emoji)) {
+          const role = await getRoleFromCatalog(messageReaction, message);
+          const member = message.guild.members.cache.find(member => member.user.id === user.id);
+          await member.roles.remove(role);
+        }
+      }
     });
 
     client.on('threadCreate', async (thread) => {
