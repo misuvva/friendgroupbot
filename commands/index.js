@@ -32,6 +32,14 @@ const createCommand = async (guild, { name, execute, ...commandArgs }) => {
   }
 };
 
+const getGameCategoryAndCatalog = (interaction) => {
+  const { guild } = interaction;
+  const catalogChannel = guild.channels.cache.find((channel) => channel.name.includes('catalog'));
+  const gamesCategory = guild.channels.cache.find((channel) => channel.name.includes('games') && channel.type === 'GUILD_CATEGORY');
+
+  return { catalogChannel, gamesCategory };
+};
+
 const setupCommands = async (guild) => {
   await createCommand(guild, {
     name: 'generate-relationship',
@@ -47,17 +55,18 @@ const setupCommands = async (guild) => {
       const { guild } = interaction;
       // make sure guild has a games category and a catalog channel
       const selfId = guild.client.user.id;
-      const catalogChannel = guild.channels.cache.find((channel) => channel.name.includes('catalog'));
-      const gamesCategory = guild.channels.cache.find((channel) => channel.name.includes('games') && channel.type === 'GUILD_CATEGORY');
-      if (!(catalogChannel && gamesCategory)) {
-        return interaction.reply(
-          `Cannot make the game, make sure that this server has a category that `
-          + `includes the word "game" and a channel that includes the word "catalog"`
-        );
-      }
       const emoji = interaction.options.getString('emoji');
       const channelName = interaction.options.getString('channelname');
       const roleName = interaction.options.getString('rolename');
+
+      const { catalogChannel, gamesCategory } = getGameCategoryAndCatalog(interaction);
+      if (!(catalogChannel && gamesCategory)) {
+        return interaction.reply(
+          `Cannot make the game, make sure that this server has a category that `
+              + `includes the word "game" and a channel that includes the word "catalog"`
+        );
+      }
+
       const catalogMessages = await catalogChannel.messages.fetch();
       let catalogMessage = catalogMessages.find((message) => message.author.bot && message.content.includes('catalog'));
       if (!catalogMessage) {
@@ -81,7 +90,7 @@ const setupCommands = async (guild) => {
         + `\n ${emoji} ${gameChannel} ${gameRole}`
       );
 
-      interaction.reply({ content: 'Done!', ephemeral: true });
+      return interaction.reply({ content: 'Done!', ephemeral: true });
 
     },
     options: [
@@ -101,6 +110,50 @@ const setupCommands = async (guild) => {
         name: 'emoji',
         description: 'The Emoji that will represent this game, it cant be one of those fancy server specific emojis',
         type: 3,
+        required: true
+      }
+    ]
+  });
+  await createCommand(guild, {
+    name: 'remove-game',
+    description: 'Removes the channel and role from a game, then removes it from the catalog',
+    execute: async (interaction) => {
+      const gameChannel = interaction.options.getChannel('gamechannel');
+      const { catalogChannel, gamesCategory } = getGameCategoryAndCatalog(interaction);
+      if (!(catalogChannel && gamesCategory)) {
+        return interaction.reply(
+          `Cannot remove the game, make sure that this server has a category that `
+              + `includes the word "game" and a channel that includes the word "catalog"`
+        );
+      }
+      const catalogMessages = await catalogChannel.messages.fetch();
+      let catalogMessage = catalogMessages.find((message) => message.author.bot && message.content.includes('catalog'));
+      if (!catalogMessage) {
+        catalogMessage = await catalogChannel.send(
+          `This is the catalog of games we have in this server, react with an emoji to be added to the role for that game:`
+        );
+      }
+      const gameLine = catalogMessage.content.split('\n').find((line) => line.includes(gameChannel.toString()));
+      const [, emoji, channelMention, roleMention] = gameLine.split(' ');
+      const channel = (await guild.channels.fetch(channelMention.slice(2, -1)));
+      const role = await guild.roles.fetch(roleMention.slice(3, -1));
+      const reaction = catalogMessage.reactions.resolve(emoji);
+      catalogMessage.edit(
+        catalogMessage.content
+          .split('\n')
+          .filter((gameLine) => !gameLine.includes(gameChannel.toString()))
+          .join('\n')
+      );
+      await role.delete();
+      await channel.delete();
+      await reaction.remove();
+      return interaction.reply({ content: 'Done!', ephemeral: true });
+    },
+    options: [
+      {
+        name: 'gamechannel',
+        description: 'the channel for the game you want to remove',
+        type: 7,
         required: true
       }
     ]
