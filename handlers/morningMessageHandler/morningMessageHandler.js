@@ -1,26 +1,24 @@
 const { DateTime } = require('luxon');
 
 const fs = require('fs/promises');
-const { getSolarString } = require('../../utils/utils');
 const { sendConversationUpdate } = require('../conversationHandler/conversationHandler');
+const { getSolarString } = require('./getSolarString');
 const { createCommand } = require('../../commands');
-const { generateRelationship } = require('../../generators/relationshipGenerator');
+const { getData } = require('../dataChannelHandler');
+
+const hourInMs = 1000 * 60 * 60;
 
 async function morningMessageHandler(now, guild, channel) {
   const calendarAsJsonString = await fs.readFile('./calendar.json', { encoding: 'utf8' });
   const calendar = JSON.parse(calendarAsJsonString);
   const dateKeyGregorian = now.toFormat('MM/dd/yyyy');
-  const { solar, gregorian, gourmand } = calendar[dateKeyGregorian];
+  const { solar, gregorian } = calendar[dateKeyGregorian];
   const gregorianString = DateTime.fromFormat(gregorian, 'cccc, MMM dd, yyyy').toFormat('cccc, MMMM d, yyyy');
   let solarString;
-  solarString = getSolarString(solar, guild);
+  solarString = await getSolarString(guild, solar);
+  console.log({ solarString }, 'DEVLOG'); // RMBL
+  return;
 
-  const makeGourmandString = (gourmand) => {
-    const components = gourmand.split(',');
-    return `${components[0]},${components[1]}`;
-  };
-
-  const gourmandString = makeGourmandString(gourmand);
   const activeThreads = guild.channels.cache
     .filter((channel) => channel.isThread())
     .filter((thread) => !thread.archived);
@@ -63,15 +61,12 @@ async function morningMessageHandler(now, guild, channel) {
 
   const threadsMessage = `\n\n**Active Threads:**${threadsForThreadsMessage.map(makeThreadLine()).join('')}`;
   const eventsMessage = `\n\n**Active Events:**${forumPostsForThreadsMessage.map(makeThreadLine('🎉')).join('')}`;
-  const relationshipMessage = generateRelationship(guild);
   const calendarString = 'Good morning! Today is'
     + `\n${solarString}`
-    + `\n🍽️ ${gourmandString}`
     + `\n🇻🇦 *(${gregorianString})*`;
   await channel.send({ content: calendarString });
   await channel.send({ content: threadsMessage });
   await channel.send({ content: eventsMessage });
-  await channel.send({ content: relationshipMessage });
   await sendConversationUpdate(guild, channel);
 }
 
@@ -114,7 +109,30 @@ const setupMorningMessageCommands = async (guild) => {
   });
 };
 
+const runMorningMessageLoop = async (guild) => {
+  const dataChannelData = await getData(guild);
+  if (!dataChannelData) return;
+  const { dailyMessagesSettings: settings } = dataChannelData;
+  console.log({ settings }, 'DEVLOG'); // RMBL
+  const inner = () => {
+    const channel = guild.channels.cache.find((channel) => channel.name.includes(settings.channelPartial));
+    if (channel) {
+      const now = DateTime.now().setZone('America/Los_Angeles');
+      morningMessageHandler(now, guild, channel);
+      // if (now.hour === 2) {
+      //   morningMessageHandler(now, guild, channel);
+      // }
+      // check if now is anywhere between 3am and 3:59am
+    }
+  };
+  if (settings.isEnabled) {
+    inner();
+    setInterval(inner, hourInMs);
+  }
+};
+
 module.exports = {
   morningMessageHandler,
-  setupMorningMessageCommands
+  setupMorningMessageCommands,
+  runMorningMessageLoop
 };

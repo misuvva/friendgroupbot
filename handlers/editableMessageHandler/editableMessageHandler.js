@@ -15,8 +15,13 @@ const editableMessageHandlers = {
         style: 'PRIMARY'
       })]
     })];
+    let messageContent;
     const sliced = message.content.split(' ');
-    const messageContent = sliced.slice(1, sliced.length).join(' ');
+    if (sliced[0] === '-editable') {
+      messageContent = sliced.slice(1, sliced.length).join(' ');
+    } else {
+      messageContent = sliced.join(' ');
+    }
     const editableMessage = await message.channel.send({ content: messageContent, components });
     const historyThread = await editableMessage.startThread({ name: 'Edit history' });
     historyThread.send(`${message.author.username}: ${messageContent}`);

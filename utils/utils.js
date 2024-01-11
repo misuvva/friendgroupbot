@@ -10,6 +10,7 @@
 // const displayChannel = (channel) => console.log(`${get(channel, 'parent.name')} > ${get(channel, 'rawPosition')} ${get(channel, 'type')}: ${get(channel, 'name')} (${get(channel, 'id')})`);
 // const displayChannels = (channels) => channels.forEach((channel) => displayChannel(channel));
 const _ = require('lodash');
+const { getData } = require('../handlers/dataChannelHandler');
 
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
 

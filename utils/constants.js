@@ -140,3 +140,11 @@ const memberIds = {
 // jon: '', // unknown
 // kajsa: '', // unknown
 // joe: '' // unknown
+
+const constants = {
+  DATA_CHANNEL_NAME: '🤖-data-🤖'
+};
+
+module.exports = {
+  constants
+};

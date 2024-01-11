@@ -9,12 +9,12 @@
 require('dotenv').config();
 const _ = require('lodash');
 const {
-  Client, Intents, MessageActionRow
+  Client, Intents, MessageActionRow, Message, MessageButton
 } = require('discord.js');
 const discordModals = require('discord-modals');
 
 const {
-  createButton
+  createButton,
 } = require('./handlers/reminderHandler/reminderHandler');
 const { dmHandler } = require('./handlers/dmHandler/dmHandler');
 const { editableMessageHandlers } = require('./handlers/editableMessageHandler/editableMessageHandler');
@@ -24,6 +24,9 @@ const { updateVoiceChats } = require('./handlers/voiceChatHandler/voiceChatHandl
 const { pick } = require('./utils/utils');
 const { setupCommands, commandsHandler } = require('./commands');
 const { Oauth2Server } = require('./server');
+const { buttonKeys, buttonHandler } = require('./handlers/buttonHandler');
+const { constants } = require('./utils/constants');
+const { runMorningMessageLoop } = require('./handlers/morningMessageHandler/morningMessageHandler');
 
 // invite link https://discord.com/oauth2/authorize?client_id=1111063850561843303&permissions=8&redirect_uri=http%3A%2F%2Flocalhost%3A53134&response_type=code&scope=applications.commands%20bot
 
@@ -94,6 +97,8 @@ client.once('ready', async () => {
                 .replace(/[^a-zA-Z\d\s]/, pick(['x', 'U', 'L', 'hhh', 'm']));
               message.startThread({ name: threadName });
             }
+          } else if (get(message, 'channel.name') === constants.DATA_CHANNEL_NAME) {
+            message.delete();
           }
         }
       } catch (error) {
@@ -116,13 +121,6 @@ client.once('ready', async () => {
       if (modal.customId === editableMessageHandlers.constants.editModalId) {
         editableMessageHandlers.modalSubmit({ modal });
       }
-    });
-
-    client.on('interactionCreate', (interaction) => {
-      if (interaction.customId === editableMessageHandlers.constants.editButtonId) {
-        editableMessageHandlers.openModal({ interaction, client });
-      }
-      commandsHandler(interaction);
     });
 
     const isCatalogMessage = async (message) => (
@@ -167,7 +165,7 @@ client.once('ready', async () => {
     client.on('threadCreate', async (thread) => {
       try {
         const { guild } = thread;
-        const generalChannnel = guild.channels.find(channel => channel.name.includes('general'));
+        const generalChannnel = guild.channels.cache.find(channel => channel.name.includes('general'));
         if (!generalChannnel) return;
         const owner = await thread.fetchOwner();
         const ownerName = owner.guildMember.displayName;
@@ -222,8 +220,8 @@ client.once('ready', async () => {
     const setupGuild = async (guild) => {
       await setupCommands(guild);
       await setupStatusCommands(guild);
-      let dataChannel = guild.channels.cache.find((channel) => get(channel, 'name').includes('data'));
-      if (!dataChannel) dataChannel = await guild.channels.create('data');
+      let dataChannel = guild.channels.cache.find((channel) => get(channel, 'name') === constants.DATA_CHANNEL_NAME);
+      if (!dataChannel) dataChannel = await guild.channels.create(constants.DATA_CHANNEL_NAME);
       const existingDataChannelMessages = await dataChannel.messages.fetch({ limit: 50 });
       if (existingDataChannelMessages.size === 0) {
         dataChannel.send(
@@ -231,12 +229,54 @@ client.once('ready', async () => {
           `You can put this channel wherever you like, as long as I have permission to see it and send messages in it, ` +
           `Please do not send any other messages in this channel! It could make me break. Thank you`
         );
-        dataChannel.send(
+        await dataChannel.send({
+          content: 'Press this button to reset all of the options in this channel',
+          components: [new MessageActionRow({
+            components: [
+              new MessageButton({
+                label: 'RESET',
+                style: 'DANGER',
+                customId: buttonKeys.RESET_DATA,
+              })
+            ]
+          })]
+        });
+        const voiceChannelNamesMessage = await dataChannel.send(
           `This is the list of possible names for voice channels: ` +
           `[The Roots,The Limbs,The Hollow,The Leaves,The Flowers,The Trunk,The Ground,The Canopy,The Air]`
         );
+        await editableMessageHandlers.create({ message: voiceChannelNamesMessage });
+        const birthdaysMessage = await dataChannel.send(
+          `This is the list of birthdays in this server \n` +
+          `Entries should look like "Nickname/Username Partial": "MM-DD-YYYY" \n` +
+          `Separated by commas \n` +
+          `{}`
+        );
+        await editableMessageHandlers.create({ message: birthdaysMessage });
+        const dailyMessageSettingsMessage = await dataChannel.send(
+          `These are the settings for the daily messages \n` +
+          `{\n` +
+          `"isEnabled": false, \n` +
+          `"onlyOnBirthdays": true, \n` +
+          `"channelPartial": null \n` +
+          `}\n`,
+        );
+        await editableMessageHandlers.create({ message: dailyMessageSettingsMessage });
       }
     };
+
+    client.on('interactionCreate', (interaction) => {
+      if (interaction.customId === editableMessageHandlers.constants.editButtonId) {
+        editableMessageHandlers.openModal({ interaction, client });
+      }
+      const buttonPackage = {
+        setupGuild,
+      };
+      if (interaction.type === 'MESSAGE_COMPONENT') {
+        buttonHandler(interaction, buttonPackage);
+      }
+      commandsHandler(interaction);
+    });
 
     client.on('guildCreate', async (guild) => {
       setupGuild(guild);
@@ -244,6 +284,7 @@ client.once('ready', async () => {
 
     client.guilds.cache.forEach(async (guild) => {
       setupGuild(guild);
+      runMorningMessageLoop(guild);
     });
   } catch (error) {
     errorHandler(error);

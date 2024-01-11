@@ -19,7 +19,9 @@ const longBeachCoordinates = {
 };
 
 const oneHourInMilliseconds = 1000 * 60 * 60;
-const buttonsRegistry = {};
+const buttonsRegistry = {
+  
+};
 const remindersKey = 'reminders';
 
 const createButton = (options) => {
@@ -157,7 +159,7 @@ const reminderHandler = async (messageReaction, user) => {
   }
 };
 
-const reminderInteractionsHandler = (interaction) => {
+const buttonInteractionHandler = (interaction) => {
   if (buttonsRegistry[interaction.customId]) {
     buttonsRegistry[interaction.customId].onPress(interaction);
   }
@@ -167,6 +169,7 @@ module.exports = {
   reminderHandler,
   remindersKey,
   remindersMinuteLoop,
-  reminderInteractionsHandler,
+  buttonInteractionHandler,
   createButton,
+  buttonsRegistry
 };
