@@ -4,11 +4,18 @@
 const { constants } = require("../../utils/constants");
 
 const getData = async (guild) => {
-  const dataChannel = guild.channels.cache.find((channel) => channel.name === constants.DATA_CHANNEL_NAME);
+  const channels = await guild.channels.fetch();
+  const dataChannel = channels.find((channel) => channel.name === constants.DATA_CHANNEL_NAME);
+  console.log('getData', guild.name, dataChannel.name, 'DEVLOG'); // RMBL
+  if (guild.name.includes('Bakery')) {
+    console.log({ dataChannel }, 'DEVLOG'); // RMBL
+  }
   if (!dataChannel) return;
   const dataChannelMessages = await dataChannel.messages.fetch({ limit: 100 });
+  console.log('messages:', dataChannelMessages.length, 'DEVLOG'); // RMBL
   const dailyMessagesSettingsMessage = dataChannelMessages
     .find((message) => message.content.includes('settings for the daily messages'));
+  console.log('dailyMessageSettingsMessage', !!dailyMessagesSettingsMessage, 'DEVLOG'); // RMBL
   if (!dailyMessagesSettingsMessage) return;
   const dailyMessagesSettingsString = `{${dailyMessagesSettingsMessage.content.split('{')[1].split('}')[0]}}`
     .split('\n').join('');

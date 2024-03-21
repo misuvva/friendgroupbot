@@ -163,7 +163,6 @@ const setupCommands = async (guild) => {
 };
 
 const commandsHandler = (interaction) => {
-  console.log(interaction.commandName, commands, 'DEVLOG'); // RMBL
   if (!interaction.isCommand()) return;
   if (commands[interaction.commandName]) commands[interaction.commandName](interaction);
 };

@@ -84,6 +84,7 @@ const setupMorningMessageCommands = async (guild, createCommand) => {
     name: 'send-daily-message',
     description: 'Send the daily morning message in the current channel',
     execute: async (interaction) => {
+      const { guild } = interaction;
       const offset = interaction.options.getInteger('offset');
       const now = DateTime.now().setZone('UTC-7').plus({ days: offset });
       const dataChannelData = await getData(guild);
@@ -104,6 +105,7 @@ const setupMorningMessageCommands = async (guild, createCommand) => {
     description: 'Test command to send the morning message solar calendar text',
     execute: async (interaction) => {
       try {
+        const { guild } = interaction;
         const offset = interaction.options.getInteger('offset');
         const now = DateTime.now().plus({ days: offset });
         const calendarAsJsonString = await fs.readFile('./calendar.json', { encoding: 'utf8' });
@@ -138,7 +140,6 @@ const runMorningMessageLoop = async (guild) => {
       if (now.hour === 2) {
         morningMessageHandler(now, guild, channel, dataChannelData);
       }
-      // check if now is anywhere between 3am and 3:59am
     }
   };
   if (settings.isEnabled) {
