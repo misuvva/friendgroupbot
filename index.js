@@ -286,6 +286,7 @@ client.once('ready', async () => {
       setupGuild(guild);
       runMorningMessageLoop(guild);
     });
+
   } catch (error) {
     errorHandler(error);
   }

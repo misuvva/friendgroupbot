@@ -1,5 +1,6 @@
 /* eslint-disable quotes */
 const { generateRelationship } = require('../generators/relationshipGenerator');
+const { setupMorningMessageCommands } = require('../handlers/morningMessageHandler/morningMessageHandler');
 const { pick } = require('../utils/utils');
 
 const pickColor = () => pick([
@@ -158,6 +159,7 @@ const setupCommands = async (guild) => {
       }
     ]
   });
+  await setupMorningMessageCommands(guild, createCommand);
 };
 
 const commandsHandler = (interaction) => {

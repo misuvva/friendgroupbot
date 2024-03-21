@@ -1,23 +1,28 @@
+/* eslint-disable prefer-template */
 const { DateTime } = require('luxon');
 
 const fs = require('fs/promises');
-const { sendConversationUpdate } = require('../conversationHandler/conversationHandler');
 const { getSolarString } = require('./getSolarString');
-const { createCommand } = require('../../commands');
 const { getData } = require('../dataChannelHandler');
 
 const hourInMs = 1000 * 60 * 60;
 
-async function morningMessageHandler(now, guild, channel) {
+async function morningMessageHandler(now, guild, channel, dataChannelData) {
+  const { dailyMessagesSettings: settings } = dataChannelData;
+
   const calendarAsJsonString = await fs.readFile('./calendar.json', { encoding: 'utf8' });
   const calendar = JSON.parse(calendarAsJsonString);
   const dateKeyGregorian = now.toFormat('MM/dd/yyyy');
   const { solar, gregorian } = calendar[dateKeyGregorian];
   const gregorianString = DateTime.fromFormat(gregorian, 'cccc, MMM dd, yyyy').toFormat('cccc, MMMM d, yyyy');
+
+  if (settings.onlyOnBirthdays) {
+    const isCurrentOrUpcomingBirthday = await getSolarString(guild, solar, true);
+    if (!isCurrentOrUpcomingBirthday) return;
+  }
+
   let solarString;
   solarString = await getSolarString(guild, solar);
-  console.log({ solarString }, 'DEVLOG'); // RMBL
-  return;
 
   const activeThreads = guild.channels.cache
     .filter((channel) => channel.isThread())
@@ -64,35 +69,48 @@ async function morningMessageHandler(now, guild, channel) {
   const calendarString = 'Good morning! Today is'
     + `\n${solarString}`
     + `\n🇻🇦 *(${gregorianString})*`;
+
   await channel.send({ content: calendarString });
-  await channel.send({ content: threadsMessage });
-  await channel.send({ content: eventsMessage });
-  await sendConversationUpdate(guild, channel);
+  if (threadsForThreadsMessage.length) {
+    await channel.send({ content: threadsMessage });
+  }
+  if (forumPostsForThreadsMessage.length) {
+    await channel.send({ content: eventsMessage });
+  }
 }
 
-const setupMorningMessageCommands = async (guild) => {
+const setupMorningMessageCommands = async (guild, createCommand) => {
   await createCommand(guild, {
     name: 'send-daily-message',
     description: 'Send the daily morning message in the current channel',
-    execute: (interaction) => {
-      const now = DateTime.now().setZone('UTC-7');
-      morningMessageHandler(now, guild, interaction.channel);
+    execute: async (interaction) => {
+      const offset = interaction.options.getInteger('offset');
+      const now = DateTime.now().setZone('UTC-7').plus({ days: offset });
+      const dataChannelData = await getData(guild);
+      morningMessageHandler(now, guild, interaction.channel, dataChannelData);
       interaction.reply({ content: 'Morning message sent!', ephemeral: true });
-    }
+    },
+    options: [
+      {
+        name: 'offset',
+        description: 'number to add to the day',
+        type: 4,
+        required: false
+      }
+    ]
   });
   await createCommand(guild, {
     name: 'send-solar-string',
     description: 'Test command to send the morning message solar calendar text',
     execute: async (interaction) => {
       try {
-        // eslint-disable-next-line no-underscore-dangle
         const offset = interaction.options.getInteger('offset');
         const now = DateTime.now().plus({ days: offset });
         const calendarAsJsonString = await fs.readFile('./calendar.json', { encoding: 'utf8' });
         const calendar = JSON.parse(calendarAsJsonString);
         const dateKeyGregorian = now.toFormat('MM/dd/yyyy');
         const { solar } = calendar[dateKeyGregorian];
-        let solarString = getSolarString(solar, guild);
+        let solarString = await getSolarString(solar, guild);
         interaction.reply({ content: solarString, ephemeral: true });
       } catch (error) {
         console.error(error);
@@ -113,15 +131,13 @@ const runMorningMessageLoop = async (guild) => {
   const dataChannelData = await getData(guild);
   if (!dataChannelData) return;
   const { dailyMessagesSettings: settings } = dataChannelData;
-  console.log({ settings }, 'DEVLOG'); // RMBL
   const inner = () => {
     const channel = guild.channels.cache.find((channel) => channel.name.includes(settings.channelPartial));
     if (channel) {
       const now = DateTime.now().setZone('America/Los_Angeles');
-      morningMessageHandler(now, guild, channel);
-      // if (now.hour === 2) {
-      //   morningMessageHandler(now, guild, channel);
-      // }
+      if (now.hour === 2) {
+        morningMessageHandler(now, guild, channel, dataChannelData);
+      }
       // check if now is anywhere between 3am and 3:59am
     }
   };
