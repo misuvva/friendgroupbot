@@ -127,7 +127,7 @@ const getSolarString = async (guild, solar, check = false) => {
     + '\n'
     + solarSeason;
 
-  if (check) return isUpcomingBirthdays || isCurrentBirthday;
+  if (check) return isCurrentBirthday;
 
   return solarString;
 };
