@@ -29,9 +29,10 @@ const voiceChannelNames = [
 const getNameAndHeartFromPartial = async (guild, partial) => {
   const members = await guild.members.fetch();
   const member = members.find((member) => member.nickname.includes(partial) || member.user.username.includes(partial));
-  const name = member.roles.color.name;
+  const role = member.roles.color;
+  const name = role.name;
   const heart = member.nickname.split(' ')[0];
-  return { name, heart };
+  return { name, heart, mention: role };
 };
 
 const joinWithAnds = (items) => {

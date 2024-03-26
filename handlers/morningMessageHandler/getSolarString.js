@@ -70,6 +70,7 @@ const getBirthdaysOnDayOfMonth = (birthdays, dayOfMonth) => Object.entries(birth
   .filter(([, { birthDayOfMonth }]) => birthDayOfMonth === dayOfMonth);
 
 const getSolarString = async (guild, solar, check = false) => {
+  console.log({ guild }, 'DEVLOG'); // RMBL
   const dataChannelData = await getData(guild);
   const { birthdays } = dataChannelData;
   const allSolarBirthdays = await getSolarBirthdays(birthdays);
@@ -86,8 +87,8 @@ const getSolarString = async (guild, solar, check = false) => {
     let hearts = [];
     for (let i = 0; i < birthdaysToday.length; i++) {
       const [partial] = birthdaysToday[i];
-      const { name, heart } = await getNameAndHeartFromPartial(guild, partial);
-      names.push(name);
+      const { heart, mention } = await getNameAndHeartFromPartial(guild, partial);
+      names.push(mention);
       hearts.push(heart);
     }
     if (names.length) {

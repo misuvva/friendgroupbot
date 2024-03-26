@@ -112,7 +112,7 @@ const setupMorningMessageCommands = async (guild, createCommand) => {
         const calendar = JSON.parse(calendarAsJsonString);
         const dateKeyGregorian = now.toFormat('MM/dd/yyyy');
         const { solar } = calendar[dateKeyGregorian];
-        let solarString = await getSolarString(solar, guild);
+        let solarString = await getSolarString(guild, solar);
         interaction.reply({ content: solarString, ephemeral: true });
       } catch (error) {
         console.error(error);
