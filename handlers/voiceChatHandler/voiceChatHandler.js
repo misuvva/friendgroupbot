@@ -18,7 +18,7 @@ const updateVoiceChats = async (oldState, newState, guild) => {
   try {
     const emptyChannels = [];
     const idealNumberOfEmptyChannels = 1;
-    const audioCategoryId = guild.channels.cache.find((channel) => get(channel, 'type') === 'GUILD_VOICE').parent.id;
+    const audioCategoryId = guild.channels.cache.find((channel) => get(channel, 'type') === 'GUILD_VOICE')?.parent?.id;
     const voiceChannelNames = await getVoiceChannelNames(guild);
     const voiceChannels = [...newState.guild.channels.cache
       .filter((channel) => get(channel, 'type') === 'GUILD_VOICE')
