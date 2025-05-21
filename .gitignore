@@ -6,4 +6,5 @@ package-lock.json
 store.json
 allMessages.json
 serverbot-google-credentials.json
+FriendGroupBot_KeyPair.pem
 
