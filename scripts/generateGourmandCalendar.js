@@ -94,18 +94,14 @@ const doFeastDaysStartNextDay = (date) => date.dateIndex === 13 && date.monthInd
 
 const iterateGourmandDate = (date) => {
   if (doFeastDaysStartNextDay(date) && date.feastDayIndex === null) {
-    // console.log('A', date, 'DEVLOG'); // RMBL
     date.feastDayIndex = 0;
     return;
   }
 
   if (date.feastDayIndex !== null) {
-    // console.log('B', date, 'DEVLOG'); // RMBL
     if (date.feastDayIndex === 4) {
-      // console.log('C', date, 'DEVLOG'); // RMBL
       date.feastDayIndex = null;
     } else {
-      // console.log('D', date, 'DEVLOG'); // RMBL
       date.feastDayIndex += 1;
       return;
     }
@@ -146,7 +142,6 @@ const generateGourmandCalendar = async () => {
     const gourmandDate = formatGourmandDate(dateCounterGourmand);
     calendar[key]['gourmand'] = gourmandDate;
     iterateGourmandDate(dateCounterGourmand);
-    if (dateCounterGourmand.feastDayIndex !== null) console.log({ dateCounterGourmand }, 'DEVLOG'); // RMBL
   });
   fs.writeFile('./calendar.json', JSON.stringify(calendar));
 };
