@@ -13,17 +13,22 @@ const getData = async (guild) => {
   if (!dailyMessagesSettingsMessage) return;
   const dailyMessagesSettingsString = `{${dailyMessagesSettingsMessage.content.split('{')[1].split('}')[0]}}`
     .split('\n').join('');
-  const dailyMessagesSettings = JSON.parse(
-    dailyMessagesSettingsString
-  );
-  const birthdaysMessage = dataChannelMessages
-    .find((message) => message.content.includes('list of birthdays'));
-  const birthdaysString = `{${birthdaysMessage.content.split('{')[1].split('}')[0].split('\n').join('')}}`;
-  const birthdays = JSON.parse(birthdaysString);
-  return {
-    dailyMessagesSettings,
-    birthdays
-  };
+
+  try {
+	  const dailyMessagesSettings = JSON.parse(
+	    dailyMessagesSettingsString
+	  );
+	  const birthdaysMessage = dataChannelMessages
+	    .find((message) => message.content.includes('list of birthdays'));
+	  const birthdaysString = `{${birthdaysMessage.content.split('{')[1].split('}')[0].split('\n').join('')}}`;
+	  const birthdays = JSON.parse(birthdaysString);
+	  return {
+	    dailyMessagesSettings,
+	    birthdays
+	  };
+  } catch (error) {
+	  console.error(error)
+  }
 };
 
 module.exports = {
