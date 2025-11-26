@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "ts-node index.ts",
+    "dev": "nodemon",
+    "build": "tsc",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -39,8 +41,21 @@
     "xstate": "^4.7.3"
   },
   "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/jest": "^30.0.0",
+    "@types/lodash": "^4.17.21",
+    "@types/luxon": "^3.7.1",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "discord-api-types": "^0.38.34",
     "eslint": "^8.4.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.25.3"
+    "eslint-plugin-import": "^2.25.3",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

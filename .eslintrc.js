@@ -1,10 +1,14 @@
 module.exports = {
-  extends: 'airbnb-base',
+  extends: [
+    'airbnb-base',
+    'plugin:@typescript-eslint/recommended',
+  ],
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
   parserOptions: {
-    ecmaVersion: 6,
-    requireConfigFile: false,
+    ecmaVersion: 2020,
+    sourceType: 'module',
   },
-  parser: '@babel/eslint-parser',
   rules: {
     'react/jsx-quotes': 0,
     'block-scoped-var': 0,
@@ -24,6 +28,25 @@ module.exports = {
     'id-length': 0,
     'no-var': 0,
     'new-cap': 0,
-    indent: [2, 2, { SwitchCase: 1 }]
+    indent: 'off',
+    '@typescript-eslint/indent': [2, 2, { SwitchCase: 1 }],
+    'import/extensions': [
+      'error',
+      'ignorePackages',
+      {
+        js: 'never',
+        jsx: 'never',
+        ts: 'never',
+        tsx: 'never',
+      },
+    ],
+    'import/no-unresolved': 0, // TypeScript handles this
+  },
+  settings: {
+    'import/resolver': {
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+      },
+    },
   },
 };

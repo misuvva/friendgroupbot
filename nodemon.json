@@ -1,5 +1,7 @@
 {
   "ignore": [
     "store.json"
-  ]
+  ],
+  "ext": "ts,js,json",
+  "exec": "ts-node index.ts"
 }
