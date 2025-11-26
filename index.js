@@ -69,6 +69,8 @@ client.once('ready', async () => {
     };
 
     const messageHandler = async (message) => {
+      console.log({ message });
+      
       const { guild } = message;
       try {
         if (!message.author.bot) {
